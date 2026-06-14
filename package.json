@@ -1,9 +1,8 @@
 {
   "name": "fillform",
-  "version": "0.2.0",
   "private": true,
   "type": "module",
-  "description": "Chrome extension that fills FamilySearch Add Person / Add Parent forms from pasted CSV.",
+  "description": "Chrome extension that fills FamilySearch Add Person / Add Parent forms from pasted CSV. Version lives in manifest.json (the single source of truth).",
   "scripts": {
     "build": "node scripts/build.mjs"
   }
