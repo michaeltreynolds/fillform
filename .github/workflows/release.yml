@@ -1,0 +1,31 @@
+name: Release
+
+# Build and publish a shareable extension zip whenever a version tag is pushed.
+# The asset is always named fillform.zip, so this permanent link serves the
+# newest build:  https://github.com/<owner>/<repo>/releases/latest/download/fillform.zip
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # No dependencies to install — the build is plain Node + zlib.
+      - name: Build extension zip
+        run: node scripts/build.mjs
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/fillform.zip
+          generate_release_notes: true
