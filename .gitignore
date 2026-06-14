@@ -1,0 +1,6 @@
+dist/
+node_modules/
+*.log
+
+# Captured HTTP samples contain real session cookies / Bearer tokens — keep local.
+specification/web_requests/

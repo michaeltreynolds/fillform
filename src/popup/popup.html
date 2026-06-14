@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="popup.css" />
+    <title>FillForm</title>
+  </head>
+  <body>
+    <h1>FillForm</h1>
+    <p class="hint">
+      Paste your CSV (Surname, Given Name, Relation, of, Parent A, Parent B,
+      Date). The header row is ignored.
+    </p>
+    <textarea id="csv" rows="10" placeholder="Gribbell,Anne,d.,of,Joseph,Anne,Nov 16 1755"></textarea>
+    <div class="row">
+      <button id="load" class="primary">Load records</button>
+      <button id="reset">Clear</button>
+    </div>
+    <div id="status" class="status"></div>
+    <div id="preview" class="preview"></div>
+
+    <!-- shared, then popup logic (classic scripts share window.FF) -->
+    <script src="../shared/storage.js"></script>
+    <script src="../content/parse-csv.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>

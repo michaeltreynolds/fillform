@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "FillForm — FamilySearch data entry helper",
+  "version": "0.1.0",
+  "description": "Fills FamilySearch Add Person / Add Parent forms from pasted CSV. You stay in control of every decision.",
+  "permissions": ["storage"],
+  "host_permissions": ["https://www.familysearch.org/*"],
+  "action": {
+    "default_popup": "src/popup/popup.html",
+    "default_title": "FillForm"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.familysearch.org/*"],
+      "js": [
+        "src/shared/storage.js",
+        "src/content/parse-csv.js",
+        "src/content/fill-engine.js",
+        "src/content/flow-detect.js",
+        "src/content/inject-button.js"
+      ],
+      "css": ["src/content/panel.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}
