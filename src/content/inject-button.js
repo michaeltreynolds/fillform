@@ -7,6 +7,7 @@
 (function () {
   const FF = window.FF;
   const PANEL_ID = "ff-panel";
+  const VERSION = chrome.runtime.getManifest().version;
   let state = { records: [], index: 0 };
   let lastSig = "";
 
@@ -46,7 +47,7 @@
 
     if (!records.length) {
       panel.innerHTML =
-        `<div class="ff-head">FillForm</div>` +
+        `<div class="ff-head">FillForm <span class="ff-ver">v${VERSION}</span></div>` +
         `<div class="ff-empty">No data loaded. Click the FillForm toolbar icon to paste CSV.</div>`;
       return;
     }
@@ -54,7 +55,7 @@
     const i = Math.min(index, records.length - 1);
     const rec = records[i];
     let html =
-      `<div class="ff-head">FillForm — record ${i + 1} / ${records.length}</div>` +
+      `<div class="ff-head">FillForm <span class="ff-ver">v${VERSION}</span> — record ${i + 1} / ${records.length}</div>` +
       `<div class="ff-rec">${esc(rec.given)} ${esc(rec.surname)} · ${esc(rec.sex || "?")} · b. ${esc(rec.birthYear || "?")}</div>`;
 
     if (flow === "parent") {

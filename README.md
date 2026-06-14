@@ -51,6 +51,9 @@ Download it, then `chrome://extensions` → enable **Developer mode** → drag t
 in (or unzip and **Load unpacked**). Chrome won't auto-update a side-loaded
 extension, so to get a newer build, re-download and reload.
 
+**Non-technical install guide (shareable):** [INSTALL.md](INSTALL.md) walks a
+non-programmer through it step by step.
+
 Releases are published automatically by [.github/workflows/release.yml](.github/workflows/release.yml)
 whenever a `v*` tag is pushed.
 

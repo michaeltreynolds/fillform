@@ -77,3 +77,10 @@ button:hover { filter: brightness(0.97); }
   color: #666;
   margin-top: 2px;
 }
+
+.version {
+  margin-top: 12px;
+  text-align: right;
+  font-size: 11px;
+  color: #999;
+}

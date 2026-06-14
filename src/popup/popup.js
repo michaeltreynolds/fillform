@@ -44,6 +44,9 @@
     showState();
   };
 
+  document.getElementById("version").textContent =
+    "v" + chrome.runtime.getManifest().version;
+
   FF.storage.onChange(showState);
   showState();
 })();
