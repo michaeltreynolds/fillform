@@ -11,7 +11,7 @@
  *   2. Open DevTools (F12) → Console. (If pasting is blocked, type
  *      "allow pasting" first, then paste.)
  *   3. Paste this whole file and press Enter. It auto-runs the Anne Gribbell
- *      sample (matches specification/web_requests/sample_search_by_name.txt).
+ *      sample (matches specification/api_samples/search_by_name.md).
  *   4. Watch the form fill. Then open the Network tab, click the form's
  *      Search/Find button, and inspect the "by-name-with-spouses" request
  *      payload. Compare it to the known-good sample.
