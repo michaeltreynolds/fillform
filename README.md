@@ -41,6 +41,19 @@ scripts/build.mjs          stages + zips an installable extension
 specification/             design notes, samples, console test harness
 ```
 
+## Install the latest shared build
+
+This permanent link always serves the newest release zip:
+
+**https://github.com/michaeltreynolds/fillform/releases/latest/download/fillform.zip**
+
+Download it, then `chrome://extensions` → enable **Developer mode** → drag the zip
+in (or unzip and **Load unpacked**). Chrome won't auto-update a side-loaded
+extension, so to get a newer build, re-download and reload.
+
+Releases are published automatically by [.github/workflows/release.yml](.github/workflows/release.yml)
+whenever a `v*` tag is pushed.
+
 ## Develop
 
 Load unpacked for a fast edit/reload loop:
