@@ -107,5 +107,5 @@ console.log("Zipping…");
 const n = zipDir(STAGE, ZIP);
 
 console.log(`\nDone → ${ZIP} (${n} files)`);
-console.log("Install: chrome://extensions → Developer mode → drag the zip in,");
-console.log("or 'Load unpacked' and pick the dist/fillform folder.");
+console.log("Install: chrome://extensions → Developer mode → 'Load unpacked'");
+console.log("→ pick the dist/fillform folder (or unzip fillform.zip and pick that).");

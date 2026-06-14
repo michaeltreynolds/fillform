@@ -5,6 +5,12 @@ A Chrome extension that helps Chris Stevenson enter genealogy data into FamilySe
 decision; the extension only **fills fields** when a button is clicked, then lets the
 native UX take over.
 
+> **Status: implemented and shipping.** All phases below are built and live-tested; the
+> "Open questions" were resolved during implementation (notes kept for history). For how to
+> run/install see the [README](../README.md) and [INSTALL.md](../INSTALL.md). The
+> still-authoritative parts of this doc are the **selectors**, **data model / parent rules**,
+> **field-fill spec**, and **Validated technique** sections.
+
 ---
 
 ## What we now know (from the sample captures)
@@ -99,7 +105,8 @@ Header: `Surname,Given Name,Relation,,Parentage,,Date` (two blank header cells).
 Confirmed rules:
 - Child surname → parents' surname (shared). Parents are given **first name only**.
 - Sometimes only one parent is listed (col 6 blank), e.g. `Jeffery,Richard,s.,of,Mary,,…`.
-- Parent birth date = child date − 20 years, formatted `abt <year>`.
+- Parent birth date = child date − 20 years, typed as `about <year>` (FamilySearch's
+  canonical approximate form).
 
 ### Parent parsing rules (RESOLVED)
 Given child surname `S`, parent field A (col 5), parent field B (col 6):
@@ -141,7 +148,7 @@ then manually deletes birth & attaches a christening for the exact date — outs
 | Last name | child's surname (or father's explicit surname per parsing rule 1) |
 | Sex | Father→Male, Mother→Female |
 | Status | **Deceased** |
-| Birth Date | `abt <childYear − 20>` (e.g. child 1755 → `abt 1735`) — confirmed the date API accepts `abt`. Chris doesn't know the real date; it's just a search seed. |
+| Birth Date | `about <childYear − 20>` (e.g. child 1755 → `about 1735`). Chris doesn't know the real date; it's just a search seed. |
 | Birthplace | **blank** |
 
 ## Validated technique (live-tested 2026-06 — see `console_test.js`)
@@ -176,7 +183,7 @@ the extension's fill engine must encode:
 ➡️ This logic lives in `console_test.js` and should be ported near-verbatim into the
 extension's content-script fill engine.
 
-## Open questions
+## Open questions (all resolved during implementation — kept for history)
 
 ### Behavior / mechanics
 5. ~~Approach A vs B~~ **RESOLVED** — Approach A validated (above).
@@ -195,7 +202,7 @@ extension's content-script fill engine.
 
 ---
 
-## Proposed implementation plan (phased)
+## Implementation plan (phased) — ✅ all phases shipped
 
 **Phase 0 — Validate the unknowns (spikes, no real build yet)**
 - Live-test approach A on FamilySearch: can we fill name/sex/date/place and produce a

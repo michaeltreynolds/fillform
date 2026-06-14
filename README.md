@@ -17,7 +17,7 @@ you click its button. It never submits, matches, or creates anything on its own.
    search and decide: attach to a match, or create a new person.
 4. After creating, use **Add Parent**. The panel detects the parent flow and
    offers **Fill Father** / **Fill Mother** buttons derived from the same
-   record (shared surname, birth ≈ child − 20 years as `abt YYYY`).
+   record (shared surname, birth ≈ child − 20 years as `about YYYY`).
 5. Click **Next ▶** in the panel to advance to the next record.
 
 The tricky part — committing FamilySearch's *standardized* Date/Place objects
@@ -47,8 +47,9 @@ This permanent link always serves the newest release zip:
 
 **https://github.com/michaeltreynolds/fillform/releases/latest/download/fillform.zip**
 
-Download it, then `chrome://extensions` → enable **Developer mode** → drag the zip
-in (or unzip and **Load unpacked**). Chrome won't auto-update a side-loaded
+Download it, **unzip** it, then `chrome://extensions` → enable **Developer mode**
+→ **Load unpacked** → pick the unzipped folder. (Chrome can't install a `.zip`
+directly — it needs the unpacked folder.) Chrome won't auto-update a side-loaded
 extension, so to get a newer build, re-download and reload.
 
 **Non-technical install guide (shareable):** [INSTALL.md](INSTALL.md) walks a

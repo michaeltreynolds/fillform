@@ -1,7 +1,7 @@
 # Initial Questions & Answers
 
-A running log of clarifying questions asked during planning and the answers given.
-See [plan.md](plan.md) for the full plan and the still-open questions.
+A running log of clarifying questions asked during planning and the answers given
+(all resolved — the extension is built). See [plan.md](plan.md) for the full design.
 
 ---
 
@@ -79,8 +79,10 @@ christening with the exact date (outside our scope).
 **A:** **Always Deceased.**
 
 ### Q. Parent birth date?
-**A (volunteered):** `abt <childYear − 20>` (child 1755 → `abt 1735`). The date API **does**
-accept `abt` dates. It's only a search seed; Chris doesn't know the real date.
+**A (volunteered):** `<childYear − 20>` (child 1755 → 1735). It's only a search seed; Chris
+doesn't know the real date. *Implementation note:* the extension types the canonical
+`about 1735` form (FamilySearch shows both `abt` and `about`; only the `about` option
+standardizes cleanly).
 
 ---
 
