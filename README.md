@@ -54,8 +54,10 @@ extension, so to get a newer build, re-download and reload.
 **Non-technical install guide (shareable):** [INSTALL.md](INSTALL.md) walks a
 non-programmer through it step by step.
 
-Releases are published automatically by [.github/workflows/release.yml](.github/workflows/release.yml)
-whenever a `v*` tag is pushed.
+Releases are published automatically by [.github/workflows/release.yml](.github/workflows/release.yml):
+bump `version` in [manifest.json](manifest.json) and push to `main`. CI builds
+`fillform.zip` and publishes a release tagged `v<version>` (and creates the tag).
+Pushes that don't change the version are no-ops, so no manual tagging is needed.
 
 ## Develop
 

@@ -1,14 +1,21 @@
 name: Release
 
-# Build and publish a shareable extension zip whenever a version tag is pushed.
-# The asset is always named fillform.zip, so this permanent link serves the
-# newest build:  https://github.com/<owner>/<repo>/releases/latest/download/fillform.zip
+# Version-driven releases: bump "version" in manifest.json and push to main.
+# This builds fillform.zip and publishes a release tagged v<version> — but only
+# if a release for that version doesn't already exist, so ordinary pushes are
+# no-ops. The asset is always named fillform.zip, so this permanent link serves
+# the newest build:
+#   https://github.com/<owner>/<repo>/releases/latest/download/fillform.zip
 on:
   push:
-    tags: ["v*"]
+    branches: [main]
 
 permissions:
   contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
   release:
@@ -20,12 +27,32 @@ jobs:
         with:
           node-version: "20"
 
-      # No dependencies to install — the build is plain Node + zlib.
+      - name: Read version from manifest.json
+        id: ver
+        run: echo "version=$(node -p "require('./manifest.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Has this version already been released?
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "v${{ steps.ver.outputs.version }}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "v${{ steps.ver.outputs.version }} already released — skipping."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "New version v${{ steps.ver.outputs.version }} — releasing."
+          fi
+
       - name: Build extension zip
+        if: steps.check.outputs.exists == 'false'
         run: node scripts/build.mjs
 
-      - name: Publish release
+      - name: Publish release (creates the tag)
+        if: steps.check.outputs.exists == 'false'
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: v${{ steps.ver.outputs.version }}
+          name: v${{ steps.ver.outputs.version }}
           files: dist/fillform.zip
           generate_release_notes: true
