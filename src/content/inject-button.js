@@ -40,7 +40,8 @@
     return w.length ? "⚠ " + w.join(", ") + " — fix manually" : "✓";
   }
 
-  function render(flow, childName) {
+  function render(flow, info) {
+    const { childName, spouseName } = info || {};
     const panel = ensurePanel();
     panel.style.display = "block";
     const { records, index } = state;
@@ -64,10 +65,26 @@
         html += `<div class="ff-child${match ? "" : " ff-warn"}">Child in form: ${esc(childName)}` +
           (match ? "" : " ⚠ doesn't match current record") + `</div>`;
       }
+      // Add-Spouse flow: the named person is the already-added parent; the spouse
+      // we're filling is the OTHER parent. Match the name to a parsed parent and
+      // recommend its counterpart.
+      let recommended = null;
+      if (spouseName) {
+        const matched = (rec.parents || []).find(
+          (p) => norm(spouseName) === norm(p.given + " " + p.surname)
+        );
+        recommended = matched
+          ? (rec.parents || []).find((p) => p.role !== matched.role)
+          : null;
+        html += `<div class="ff-child${matched ? "" : " ff-warn"}">Spouse in form: ${esc(spouseName)}` +
+          (matched ? ` (${cap(matched.role)} in data)` : " ⚠ doesn't match a parent in data") + `</div>`;
+      }
       if (rec.parents && rec.parents.length) {
         html += `<div class="ff-btns">`;
-        for (const p of rec.parents)
-          html += `<button class="ff-btn" data-parent="${esc(p.role)}">Fill ${cap(p.role)}: ${esc(p.given)} ${esc(p.surname)}</button>`;
+        for (const p of rec.parents) {
+          const isRec = recommended && p.role === recommended.role;
+          html += `<button class="ff-btn${isRec ? " ff-primary" : ""}" data-parent="${esc(p.role)}">Fill ${cap(p.role)}: ${esc(p.given)} ${esc(p.surname)}${isRec ? " ◀ likely" : ""}</button>`;
+        }
         html += `</div>`;
       } else {
         html += `<div class="ff-empty">No parents in data for this record.</div>`;
@@ -127,11 +144,12 @@
       lastSig = "";
       return;
     }
-    const { flow, childName } = FF.detectFlow();
-    const sig = [flow, childName, state.index, state.records.length].join("|");
+    const info = FF.detectFlow();
+    const { flow, childName, spouseName } = info;
+    const sig = [flow, childName, spouseName, state.index, state.records.length].join("|");
     if (!force && sig === lastSig && document.getElementById(PANEL_ID)) return;
     lastSig = sig;
-    render(flow, childName);
+    render(flow, info);
   }
 
   async function refresh() {

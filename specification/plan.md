@@ -40,6 +40,11 @@ them**; use `name` / `data-testid` / `role`):
 - **Add Parent:** modal `div[role="dialog"][aria-label^="Add Parents"]`, `<h2>Add Parents</h2>`,
   with a subheading `Child: <Full Name>`. **The child's name is readable here** — this is our
   source for deriving the parent's shared last name and approximate birth year.
+- **Add Spouse:** modal `div[role="dialog"][aria-label^="Add Spouse"]`, `<h2>Add Spouse</h2>`,
+  with a subheading `Spouse: <Full Name>`. The **same find-form** as Add Parent, so it's treated
+  as a `parent` flow. In Chris's workflow he adds a parent, then adds a spouse *to that parent* —
+  and that spouse is the child's **other parent**. The subheading names the already-added parent,
+  so the panel matches it to a parsed parent and recommends filling the counterpart.
 
 ### 3. The "complicated" Date & Place values — mystery essentially solved
 The submitted `search/by-name-with-spouses` payload shows exactly what the fields resolve to.
