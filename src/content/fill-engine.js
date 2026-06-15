@@ -195,17 +195,15 @@
     let dateOk = true;
     const y = parseInt(childYear, 10);
     if (y) {
-      // Parent birth is unknown — seed a standardized RANGE so the search isn't
-      // pinned to one year. Born up to 45 years before the child (oldest), down
-      // to the youngest plausible childbearing age: mothers ~16, fathers ~20.
-      // FamilySearch standardizes "from about A to B" into a date range ("about"
-      // on the first date only); the standardized option carries the calendar icon.
-      const youngest = parent.sex === "female" ? 16 : 20;
-      dateOk = await fillCombo(
-        "birthDate",
-        `from about ${y - 45} to ${y - youngest}`,
-        { attempts: 3, pick: DATE_PICK }
-      );
+      // Parent birth is unknown — seed an approximate single year as a search
+      // seed: fathers ~25 years before the child, mothers ~21. Typed as
+      // FamilySearch's canonical "about <year>"; the standardized option carries
+      // the calendar icon.
+      const offset = parent.sex === "female" ? 21 : 25;
+      dateOk = await fillCombo("birthDate", `about ${y - offset}`, {
+        attempts: 3,
+        pick: DATE_PICK,
+      });
     }
     // Parent birthplace is intentionally left blank (unknown).
     return { ok: true, dateOk };
