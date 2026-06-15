@@ -198,12 +198,12 @@
       // Parent birth is unknown — seed a standardized RANGE so the search isn't
       // pinned to one year. Born up to 45 years before the child (oldest), down
       // to the youngest plausible childbearing age: mothers ~16, fathers ~20.
-      // FamilySearch standardizes "from about A to about B" into a date range;
-      // the standardized option carries the calendar icon.
+      // FamilySearch standardizes "from about A to B" into a date range ("about"
+      // on the first date only); the standardized option carries the calendar icon.
       const youngest = parent.sex === "female" ? 16 : 20;
       dateOk = await fillCombo(
         "birthDate",
-        `from about ${y - 45} to about ${y - youngest}`,
+        `from about ${y - 45} to ${y - youngest}`,
         { attempts: 3, pick: DATE_PICK }
       );
     }
