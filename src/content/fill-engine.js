@@ -195,9 +195,15 @@
     let dateOk = true;
     const y = parseInt(childYear, 10);
     if (y) {
-      // Parent birth ≈ child's birth − 20 years, as an approximate search seed.
-      // Type FamilySearch's canonical "about" form so the echo matches the result.
-      dateOk = await fillCombo("birthDate", "about " + (y - 20), { attempts: 3, pick: DATE_PICK });
+      // Parent birth is unknown — seed a standardized RANGE so the search isn't
+      // pinned to one year: born 20–45 years before the child (i.e. aged 20–45
+      // at the child's birth). FamilySearch standardizes "from about A to about B"
+      // into a date range; the standardized option carries the calendar icon.
+      dateOk = await fillCombo(
+        "birthDate",
+        `from about ${y - 45} to about ${y - 20}`,
+        { attempts: 3, pick: DATE_PICK }
+      );
     }
     // Parent birthplace is intentionally left blank (unknown).
     return { ok: true, dateOk };

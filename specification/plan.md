@@ -110,8 +110,9 @@ Header: `Surname,Given Name,Relation,,Parentage,,Date` (two blank header cells).
 Confirmed rules:
 - Child surname → parents' surname (shared). Parents are given **first name only**.
 - Sometimes only one parent is listed (col 6 blank), e.g. `Jeffery,Richard,s.,of,Mary,,…`.
-- Parent birth date = child date − 20 years, typed as `about <year>` (FamilySearch's
-  canonical approximate form).
+- Parent birth date = a standardized range `from about <childYear − 45> to about
+  <childYear − 20>` (parent aged 20–45 at the child's birth) — a search seed, not a
+  known date, so a range beats a single year.
 
 ### Parent parsing rules (RESOLVED)
 Given child surname `S`, parent field A (col 5), parent field B (col 6):
@@ -153,7 +154,7 @@ then manually deletes birth & attaches a christening for the exact date — outs
 | Last name | child's surname (or father's explicit surname per parsing rule 1) |
 | Sex | Father→Male, Mother→Female |
 | Status | **Deceased** |
-| Birth Date | `about <childYear − 20>` (e.g. child 1755 → `about 1735`). Chris doesn't know the real date; it's just a search seed. |
+| Birth Date | Standardized **range** `from about <childYear − 45> to about <childYear − 20>` (e.g. child 1755 → `from about 1710 to about 1735`) — parent aged 20–45 at the child's birth. Chris doesn't know the real date; it's just a search seed, so a range beats a single year. |
 | Birthplace | **blank** |
 
 ## Validated technique (live-tested 2026-06 — see `console_test.js`)
