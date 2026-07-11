@@ -121,9 +121,8 @@
    *             which dodges the echo (e.g. "abt 1735" echo vs "about 1735" std).
    *  - matcher: text predicate to choose the option (else option #0).
    */
-  async function fillCombo(name, typed, { matcher, pick, settleMs = 250, attempts = 1 } = {}) {
-    const el = byName(name);
-    if (!el) { console.warn("[FF] missing combo:", name); return false; }
+  async function fillComboEl(el, typed, { matcher, pick, settleMs = 250, attempts = 1 } = {}, label = "combo") {
+    if (!el) { console.warn("[FF] missing combo:", label); return false; }
 
     const idxOf = (opts) => {
       let i = -1;
@@ -160,9 +159,12 @@
       if (await trySelect(el, idxOf(options))) return true;
       await sleep(300);
     }
-    console.warn("[FF]", name, "— could not standardize, left as typed:", el.value);
+    console.warn("[FF]", label, "— could not standardize, left as typed:", el.value);
     return false;
   }
+
+  // Find-form convenience wrapper: resolve the combo by its input name.
+  const fillCombo = (name, typed, opts) => fillComboEl(byName(name), typed, opts, name);
 
   // The standardized date option carries a calendar icon; the raw echo does not.
   const DATE_PICK = (o) => !!o && !!o.querySelector("svg");
@@ -209,6 +211,45 @@
     return { ok: true, dateOk };
   }
 
+  /**
+   * On a person's page (Vitals), open the Christening "Add" dialog and fill its
+   * Date + Place with the record's FULL date (day/month/year, unlike Birth which
+   * is year-only) and Illogan — then STOP. We deliberately do NOT click Save:
+   * FillForm never commits; Chris reviews the populated dialog and saves himself.
+   */
+  async function fillChristening(rec) {
+    const addBtn = document.querySelector(
+      '[data-testid="highlight-CHRISTENING"] [data-testid="conclusion:add:button"]'
+    );
+    if (!addBtn) return { ok: false, error: "no Add-Christening button (a christening may already exist)" };
+    if (!rec.dateText) return { ok: false, error: "record has no date" };
+
+    realClick(addBtn);
+
+    // The Christening add/edit dialog carries the CHRISTENING class on its form.
+    let dateEl;
+    try {
+      dateEl = await waitFor(() =>
+        document.querySelector('.CHRISTENING input[data-testid="conclusionDetailOverlay:date"]')
+      );
+    } catch {
+      return { ok: false, error: "christening dialog did not open" };
+    }
+
+    const dateOk = await fillComboEl(dateEl, rec.dateText, { attempts: 3, pick: DATE_PICK }, "christeningDate");
+    const placeEl = document.querySelector('.CHRISTENING input[data-testid="conclusionDetailOverlay:place"]');
+    const placeOk = await fillComboEl(
+      placeEl,
+      ILLOGAN,
+      { attempts: 2, matcher: (t) => /^illogan, cornwall/i.test(t) },
+      "christeningPlace"
+    );
+
+    // No Save — leave the dialog open for Chris to review and commit.
+    return { ok: true, dateOk, placeOk };
+  }
+
   FF.fillPerson = fillPerson;
   FF.fillParent = fillParent;
+  FF.fillChristening = fillChristening;
 })();

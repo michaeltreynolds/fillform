@@ -143,8 +143,12 @@ he can search → match-or-create.)
 | Birth Date | **year only**, extracted from col 7 (e.g. `Nov 16 1755` → `1755`) |
 | Birthplace | **Illogan, Cornwall, England, United Kingdom** (select 1st suggestion) |
 
-Note: Chris uses Birth Date only to find/create. If no match, he creates as a birth record,
-then manually deletes birth & attaches a christening for the exact date — outside our scope.
+Note: Chris uses Birth Date only to find/create. If no match, he creates the person, then on
+the new person's Vitals page the panel offers an **Add christening: `<date>` at Illogan**
+button (a `vitals` flow). It clicks the Christening **+ Add**, then fills the standardized
+**full date** (day/month/year, from col 7) and **Illogan** — and STOPS without saving, so Chris
+reviews and commits. Deleting the seeded birth date is intentionally left manual (FillForm never
+destroys or commits data). See the fill engine's `fillChristening`.
 
 **Parent (Add Parent flow)** — derived from the child + parent-parsing rules above
 | Field | Value |

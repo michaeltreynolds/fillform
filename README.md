@@ -15,10 +15,15 @@ you click its button. It never submits, matches, or creates anything on its own.
 3. Click **Fill** — it populates First/Last name, Sex, Status (Deceased), the
    standardized **Birth Date** (year), and **Birthplace** (Illogan). Then you
    search and decide: attach to a match, or create a new person.
-4. After creating, use **Add Parent**. The panel detects the parent flow and
-   offers **Fill Father** / **Fill Mother** buttons derived from the same
-   record (shared surname, birth ≈ child − 20 years as `about YYYY`).
-5. Click **Next ▶** in the panel to advance to the next record.
+4. After creating, on the new person's page the panel offers **Add christening:
+   `<date>` at Illogan** (when there's no christening yet). Click it to open the
+   Christening dialog and fill the standardized **full date** (day/month/year,
+   from your data) and **Illogan** — it stops there and does **not** save, so you
+   review and click **Save** yourself.
+5. Also use **Add Parent**. The panel detects the parent flow and offers **Fill
+   Father** / **Fill Mother** buttons derived from the same record (shared
+   surname, birth ≈ child − 20 years as `about YYYY`).
+6. Click **Next ▶** in the panel to advance to the next record.
 
 The tricky part — committing FamilySearch's *standardized* Date/Place objects
 (not just text) — is handled by driving the page's own autosuggest widgets. See

@@ -41,7 +41,7 @@
   }
 
   function render(flow, info) {
-    const { childName, spouseName } = info || {};
+    const { childName, spouseName, personName, christeningExists, canAddChristening } = info || {};
     const panel = ensurePanel();
     panel.style.display = "block";
     const { records, index } = state;
@@ -59,7 +59,22 @@
       `<div class="ff-head">FillForm <span class="ff-ver">v${VERSION}</span> — record ${i + 1} / ${records.length}</div>` +
       `<div class="ff-rec">${esc(rec.given)} ${esc(rec.surname)} · ${esc(rec.sex || "?")} · b. ${esc(rec.birthYear || "?")}</div>`;
 
-    if (flow === "parent") {
+    if (flow === "vitals") {
+      const match = personName && norm(personName) === norm(rec.given + " " + rec.surname);
+      html += `<div class="ff-child${match ? "" : " ff-warn"}">Person page: ${esc(personName || "?")}` +
+        (match ? "" : " ⚠ doesn't match current record") + `</div>`;
+      if (christeningExists) {
+        html += `<div class="ff-sub">Christening already recorded on this page.</div>`;
+      } else if (!canAddChristening) {
+        html += `<div class="ff-empty">No Christening section found on this page.</div>`;
+      } else if (!rec.dateText) {
+        html += `<div class="ff-empty">This record has no date to add as a christening.</div>`;
+      } else {
+        html += `<div class="ff-btns"><button class="ff-btn ff-primary" data-christening="1">` +
+          `Add christening: ${esc(rec.dateText)} at Illogan</button></div>`;
+        html += `<div class="ff-sub">Opens the Christening dialog and fills the date + place. It does not save — review, then click Save yourself.</div>`;
+      }
+    } else if (flow === "parent") {
       if (childName) {
         const match = norm(childName) === norm(rec.given + " " + rec.surname);
         html += `<div class="ff-child${match ? "" : " ff-warn"}">Child in form: ${esc(childName)}` +
@@ -114,6 +129,14 @@
         status(r.ok ? "Filled. " + warnFlags(r) : "Error: " + r.error);
       };
 
+    const chr = panel.querySelector("[data-christening]");
+    if (chr)
+      chr.onclick = async () => {
+        status("Opening christening…");
+        const r = await FF.fillChristening(rec);
+        status(r.ok ? "Filled christening. " + warnFlags(r) : "Error: " + r.error);
+      };
+
     panel.querySelectorAll("[data-parent]").forEach((b) => {
       b.onclick = async () => {
         const role = b.getAttribute("data-parent");
@@ -138,15 +161,19 @@
   // Re-render only when something meaningful changed (avoids wiping the status
   // line on unrelated SPA mutations).
   function maybeRender(force) {
-    if (!document.querySelector("#find-form")) {
+    const info = FF.detectFlow();
+    const { flow, childName, spouseName, personName, christeningExists, canAddChristening } = info;
+    // Panel is relevant on the find-form flows AND on a person's Vitals page.
+    if (!flow) {
       const p = document.getElementById(PANEL_ID);
       if (p) p.style.display = "none";
       lastSig = "";
       return;
     }
-    const info = FF.detectFlow();
-    const { flow, childName, spouseName } = info;
-    const sig = [flow, childName, spouseName, state.index, state.records.length].join("|");
+    const sig = [
+      flow, childName, spouseName, personName, christeningExists, canAddChristening,
+      state.index, state.records.length,
+    ].join("|");
     if (!force && sig === lastSig && document.getElementById(PANEL_ID)) return;
     lastSig = sig;
     render(flow, info);
