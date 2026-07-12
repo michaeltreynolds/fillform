@@ -136,7 +136,7 @@
       try {
         options = await openAndGetOptions(el, typed);
       } catch {
-        console.warn("[FF]", name, "— no suggestions appeared.");
+        console.warn("[FF]", label, "— no suggestions appeared.");
         return false;
       }
 
