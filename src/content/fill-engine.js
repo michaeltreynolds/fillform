@@ -91,24 +91,34 @@
     );
   }
 
-  // Step the highlight to exactly idx (Downshift auto-highlights #0, so blind
-  // counting overshoots), then Enter. Mouse click as fallback.
-  async function trySelect(el, idx) {
-    for (let guard = 0; guard < 25; guard++) {
-      const cur = highlightedIndex(el);
-      if (cur === idx) break;
-      const down = cur === -1 || cur < idx;
-      key(el, down ? "ArrowDown" : "ArrowUp", down ? 40 : 38);
-      await sleep(60);
-    }
-    key(el, "Enter", 13);
+  // Commit the chosen option. `find` re-resolves the target option element LIVE
+  // (option nodes get replaced as the menu streams in, so a cached node goes
+  // stale). We CLICK the target directly rather than arrow-stepping to it:
+  // while the standardized option is still streaming in, the menu re-renders
+  // repeatedly and Downshift re-homes its highlight to option #0 on every
+  // re-render — so ArrowDown stepping visibly ping-pongs the highlight for a
+  // second before it settles. A direct click sidesteps that highlight war.
+  // Keyboard highlight+Enter stays as a fallback if the click doesn't take.
+  async function trySelect(el, find) {
+    const target = find();
+    if (!target) return false;
+
+    realClick(target);
     await sleep(400);
     if (isStandardized(el)) return true;
 
-    const opts = visibleOptions();
-    const c = opts[idx] || opts[0];
-    if (c) realClick(c);
-    await sleep(400);
+    const idx = visibleOptions().indexOf(find() || target);
+    if (idx >= 0) {
+      for (let guard = 0; guard < 25; guard++) {
+        const cur = highlightedIndex(el);
+        if (cur === idx) break;
+        const down = cur === -1 || cur < idx;
+        key(el, down ? "ArrowDown" : "ArrowUp", down ? 40 : 38);
+        await sleep(60);
+      }
+      key(el, "Enter", 13);
+      await sleep(400);
+    }
     return isStandardized(el);
   }
 
@@ -124,39 +134,41 @@
   async function fillComboEl(el, typed, { matcher, pick, settleMs = 250, attempts = 1 } = {}, label = "combo") {
     if (!el) { console.warn("[FF] missing combo:", label); return false; }
 
-    const idxOf = (opts) => {
+    // Re-resolve the target option element live: the `pick` predicate (the
+    // calendar-icon = standardized date) wins, else the text `matcher`, else the
+    // first option.
+    const find = () => {
+      const opts = visibleOptions();
+      if (!opts.length) return null;
       let i = -1;
       if (pick) i = opts.findIndex(pick);
       else if (matcher) i = opts.findIndex((o) => matcher(o.textContent.trim()));
-      return i >= 0 ? i : 0;
+      return opts[i >= 0 ? i : 0];
     };
 
     for (let attempt = 1; attempt <= attempts; attempt++) {
-      let options;
       try {
-        options = await openAndGetOptions(el, typed);
+        await openAndGetOptions(el, typed);
       } catch {
         console.warn("[FF]", label, "— no suggestions appeared.");
         return false;
       }
 
       if (pick) {
-        // Wait until the standardized option (e.g. the one with the icon) exists.
+        // Wait until the standardized option (the one with the icon) exists.
         try {
-          options = await waitFor(() => {
+          await waitFor(() => {
             const o = visibleOptions();
             return o.length && o.some(pick) ? o : null;
           }, { timeout: 6000 });
-        } catch {
-          options = visibleOptions();
-        }
-      } else {
-        await sleep(settleMs);
-        options = visibleOptions();
+        } catch { /* proceed with whatever rendered */ }
       }
+      // Let the menu stop re-rendering before we commit, so we don't click a
+      // node that's about to be replaced.
+      await sleep(settleMs);
 
-      if (!options.length) continue;
-      if (await trySelect(el, idxOf(options))) return true;
+      if (!visibleOptions().length) continue;
+      if (await trySelect(el, find)) return true;
       await sleep(300);
     }
     console.warn("[FF]", label, "— could not standardize, left as typed:", el.value);
