@@ -171,11 +171,19 @@ the extension's fill engine must encode:
 - **Target the input, not the wrapper:** the form has a `<div name="birthDate">` *around* the
   `<input name="birthDate">` — query `input[name="…"]`.
 - **Autosuggest = Downshift comboboxes** (`#downshift-N-menu`, options
-  `[role="option"][data-testid="suggestion-i"]`). Selection is committed by **keyboard**:
-  step the highlight to the target option, then `Enter`.
-- **Downshift auto-highlights option #0 on open** → blind ArrowDown counting overshoots.
-  Navigate deterministically: read the highlighted option (`aria-selected="true"` /
-  input's `aria-activedescendant`) and step until it equals the target index.
+  `[role="option"][data-testid="suggestion-i"]`). Selection is committed by **clicking the
+  target option directly** (a full `pointer*/mouse*/click` sequence). We identify the exact
+  option (calendar-icon row for dates, matching text for places), re-resolve it live, and
+  click it. Keyboard highlight-then-`Enter` is kept only as a fallback.
+- **Why click, not arrow-step (v0.7.1):** while the standardized option streams in, the menu
+  re-renders repeatedly and Downshift **re-homes its highlight to option #0 on every
+  re-render**. Walking the highlight down with `ArrowDown` fought that reset, so the highlight
+  visibly *ping-ponged* between the echo and standardized rows for a second before settling.
+  Clicking the target row sidesteps the highlight entirely. (Single-option cases like a plain
+  birth year never showed this — there's nothing to step to.)
+- **Re-resolve the option node before clicking:** the option elements are replaced as the menu
+  streams in, so a cached node goes stale. A `find()` closure re-queries the live options each
+  time; we also settle briefly so we don't click a node that's about to be replaced.
 - **Date field echo trap:** the Date menu shows an instant **echo** option before
   `dates/interp` resolves. For a plain year ("1755") the single option is upgraded *in
   place* (gains a calendar `<svg>` icon). For an approximate date ("abt 1735") there are
@@ -186,8 +194,8 @@ the extension's fill engine must encode:
 - **Success signal:** the field wrapper shows "Non-standardized Date/Place" until the rich
   object binds — absence of that text = standardized. Use as the verify-and-retry check.
 - **Place query:** typing the full formatted name returns the right match plus near-misses
-  (e.g. Redruth); match on the option text starting with the desired place and select that
-  exact index.
+  (e.g. Redruth); match on the option text starting with the desired place and click that
+  option.
 
 ➡️ This logic lives in `console_test.js` and should be ported near-verbatim into the
 extension's content-script fill engine.

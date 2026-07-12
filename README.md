@@ -37,8 +37,8 @@ src/
   shared/storage.js        chrome.storage.local state (records + cursor)
   content/
     parse-csv.js           CSV schema + parent-derivation rules (pure)
-    fill-engine.js         drives the form / autosuggests (the validated logic)
-    flow-detect.js         Add-Person vs Add-Parent detection
+    fill-engine.js         drives the form + Christening dialog autosuggests
+    flow-detect.js         Add-Person / Add-Parent / person-page (Vitals) detection
     inject-button.js       the floating control panel
     panel.css
   popup/                   paste-CSV UI
