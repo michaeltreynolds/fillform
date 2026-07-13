@@ -72,6 +72,13 @@
 
   async function openAndGetOptions(el, typed) {
     el.focus();
+    // Open the Downshift menu the way a real pointer click does. The app only
+    // fires the async date/place fetch once the menu is OPEN; a synthetic
+    // focus() can leave it closed, so the suggestions — and, for "about <year>",
+    // the standardized option — take several seconds to appear (the field sits on
+    // "Non-standardized Date"). Guard on aria-expanded so we open, never toggle
+    // an already-open menu shut on a retry.
+    if (el.getAttribute("aria-expanded") !== "true") realClick(el);
     setNativeValue(el, "");
     setNativeValue(el, typed);
     key(el, "a", 65); // nudge widgets that only react to key events
