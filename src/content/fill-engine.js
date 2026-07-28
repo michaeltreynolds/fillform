@@ -218,13 +218,16 @@
   const DATE_PICK = (o) => !!o && !!o.querySelector("svg");
   const ILLOGAN = "Illogan, Cornwall, England, United Kingdom";
 
-  // A parent's birthplace: the historical "Cornwall, England" jurisdiction —
-  // deliberately NOT the "Cornwall, England, United Kingdom" option. FamilySearch
-  // lists both; Chris wants the one WITHOUT the "United Kingdom" tail. The matcher
-  // takes an option starting "Cornwall, England" that doesn't mention the UK.
+  // A parent's birthplace: the historical "Cornwall, England" jurisdiction
+  // (County, 1068-1801) — deliberately NOT "Cornwall, England, United Kingdom"
+  // (County, 1801-Present). FamilySearch lists both; Chris wants the one WITHOUT
+  // the "United Kingdom" tail. An option's textContent is name + subtitle with no
+  // separator (e.g. "Cornwall, EnglandCounty (Top level), 1068 - 1801"), so we
+  // match on containing "Cornwall, England" while EXCLUDING any UK variant rather
+  // than anchoring/word-bounding on the name (which the glued-on subtitle breaks).
   const CORNWALL = "Cornwall, England";
   const CORNWALL_MATCH = (t) =>
-    /^cornwall,\s*england\b/i.test(t) && !/united kingdom/i.test(t);
+    /cornwall,\s*england/i.test(t) && !/united\s*kingdom/i.test(t);
 
   async function fillPerson(rec) {
     if (!document.querySelector("#find-form")) return { ok: false, error: "no form on page" };
