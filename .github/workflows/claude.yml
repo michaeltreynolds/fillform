@@ -1,13 +1,22 @@
 name: Claude
 
-# Lets a collaborator (e.g. Chris) just open a GitHub issue and have Claude
-# read it, ask questions, open a PR with the fix/feature, and ask them to test.
+# Lets an allowed person just open a GitHub issue and have Claude read it,
+# ask questions if needed, make the change, commit it straight to main, and
+# tell them how to test it.
 #
-# Setup required once (see README / repo settings):
+# SECURITY — this repo is PUBLIC, so anyone on GitHub can open an issue.
+# Claude only runs for the usernames in the allow-list below. Everyone else
+# is silently ignored (their issue just sits there; no run, no cost).
+#
+#   >>> TO LET SOMEONE NEW TRIGGER CLAUDE (e.g. Chris once he has a GitHub
+#   >>> account): add their exact GitHub username to BOTH allow-lists below,
+#   >>> the one in `triage-issue` and the one in `respond-to-mention`.
+#   >>> e.g.  '["michaeltreynolds"]'  ->  '["michaeltreynolds","chris-username"]'
+#
+# One-time setup (see repo Settings):
 #   1. Run `claude setup-token` locally and copy the token it prints.
 #   2. Add it as a repo secret named CLAUDE_CODE_OAUTH_TOKEN.
 #   3. Install the Claude GitHub App on this repo.
-#   4. Add the person who will file issues as a collaborator (write access).
 
 on:
   issues:
@@ -17,18 +26,19 @@ on:
   pull_request_review_comment:
     types: [created]
 
-# The action verifies the triggering user has write access before doing anything,
-# so only collaborators can start a run.
 permissions:
-  contents: write        # create branches / commit
-  pull-requests: write   # open PRs
+  contents: write        # commit/push changes to main
+  pull-requests: write   # comment on PRs
   issues: write          # comment on issues
   id-token: write        # required by the action
 
 jobs:
-  # A brand-new issue: triage it, ask questions or open a PR. No @claude needed.
+  # A brand-new issue from an allowed user: triage it, ask questions or make
+  # the change. No @claude mention needed.
   triage-issue:
-    if: github.event_name == 'issues'
+    if: >
+      github.event_name == 'issues' &&
+      contains(fromJSON('["michaeltreynolds"]'), github.event.issue.user.login)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -57,11 +67,14 @@ jobs:
                what you changed and clear, step-by-step instructions for how the
                reporter can test it. Avoid jargon.
 
-  # A follow-up comment that mentions @claude: continue the conversation / work.
+  # A follow-up comment from an allowed user that mentions @claude: continue.
   respond-to-mention:
-    if: |
-      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude'))
+    if: >
+      (
+        (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+        (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude'))
+      ) &&
+      contains(fromJSON('["michaeltreynolds"]'), github.event.comment.user.login)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
