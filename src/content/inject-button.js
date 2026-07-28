@@ -55,11 +55,26 @@
 
     const i = Math.min(index, records.length - 1);
     const rec = records[i];
+    const isMarriage = rec.type === "marriage";
+    const recLine = isMarriage
+      ? `${esc(rec.husbandGiven)} ${esc(rec.husbandSurname)} &amp; ${esc(rec.wifeGiven)} ${esc(rec.wifeSurname)} · m. ${esc(rec.year || "?")}`
+      : `${esc(rec.given)} ${esc(rec.surname)} · ${esc(rec.sex || "?")} · b. ${esc(rec.birthYear || "?")}`;
     let html =
       `<div class="ff-head">FillForm <span class="ff-ver">v${VERSION}</span> — record ${i + 1} / ${records.length}</div>` +
-      `<div class="ff-rec">${esc(rec.given)} ${esc(rec.surname)} · ${esc(rec.sex || "?")} · b. ${esc(rec.birthYear || "?")}</div>`;
+      `<div class="ff-rec">${recLine}</div>`;
 
-    if (flow === "vitals") {
+    if (flow === "search") {
+      if (isMarriage) {
+        html += `<div class="ff-btns"><button class="ff-btn ff-primary" data-marriage="1">` +
+          `Fill marriage: ${esc(rec.husbandGiven)} &amp; ${esc(rec.wifeGiven)}</button></div>`;
+        html += `<div class="ff-sub">Opens the Marriage + Spouse fields and fills the couple, Illogan, and ${esc(rec.year || "the year")}. ` +
+          `It does not search — review, then press Enter yourself.</div>`;
+      } else {
+        html += `<div class="ff-empty">This is the marriage-search page, but the loaded records are baptisms. Load a marriage CSV to fill it.</div>`;
+      }
+    } else if (isMarriage) {
+      html += `<div class="ff-empty">Go to the FamilySearch <b>Find</b> (tree search) page to fill this marriage.</div>`;
+    } else if (flow === "vitals") {
       const match = personName && norm(personName) === norm(rec.given + " " + rec.surname);
       html += `<div class="ff-child${match ? "" : " ff-warn"}">Person page: ${esc(personName || "?")}` +
         (match ? "" : " ⚠ doesn't match current record") + `</div>`;
@@ -135,6 +150,14 @@
         status("Opening christening…");
         const r = await FF.fillChristening(rec);
         status(r.ok ? "Filled christening. " + warnFlags(r) : "Error: " + r.error);
+      };
+
+    const mar = panel.querySelector("[data-marriage]");
+    if (mar)
+      mar.onclick = async () => {
+        status("Filling marriage…");
+        const r = await FF.fillMarriage(rec);
+        status(r.ok ? "Filled marriage. " + warnFlags(r) : "Error: " + r.error);
       };
 
     panel.querySelectorAll("[data-parent]").forEach((b) => {

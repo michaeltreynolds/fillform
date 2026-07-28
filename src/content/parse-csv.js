@@ -1,7 +1,11 @@
-/* CSV parsing + parent-derivation for the Illogan baptism-register format.
+/* CSV parsing for the Illogan registers — two formats, auto-detected from the
+ * header row so Chris can paste either without picking a mode:
  *
- * Columns (positional, header row auto-skipped):
- *   0 Surname | 1 Given Name | 2 Relation (s./d.) | 3 "of" | 4 Parent A | 5 Parent B | 6 Date
+ *  Baptisms  (type: "person")  — the default format:
+ *    0 Surname | 1 Given Name | 2 Relation (s./d.) | 3 "of" | 4 Parent A | 5 Parent B | 6 Date
+ *
+ *  Marriages (type: "marriage") — header contains "Husband" and "Wife":
+ *    0 Husband Surname | 1 Husband Given | 2 Wife Surname | 3 Wife Given | 4 Marriage Date | 5 Husband Career | 6 Wife Career
  *
  * Tolerant of messy pastes (Google Docs/Sheets): comma OR tab delimited, any
  * line-ending, blank lines, and non-breaking spaces.
@@ -91,14 +95,12 @@
     ];
   }
 
-  function parseCsv(text) {
-    const normalized = String(text || "").split(NBSP).join(" ");
-    const delim = detectDelimiter(normalized);
-    const lines = normalized
-      .split(LINE_BREAK)
-      .map((l) => l.trim())
-      .filter(Boolean);
+  // A header with both "Husband" and "Wife" marks the marriage register.
+  const looksLikeMarriage = (headerCells) =>
+    headerCells.some((h) => /husband/i.test(h)) && headerCells.some((h) => /wife/i.test(h));
 
+  // Baptism register → one "person" record per child (with derived parents).
+  function parseBaptismLines(lines, delim) {
     const records = [];
     for (const line of lines) {
       const c = splitLine(line, delim);
@@ -111,6 +113,7 @@
 
       const dateText = c[6] || "";
       records.push({
+        type: "person",
         surname,
         given,
         sex: sexFromRelation(c[2] || ""),
@@ -120,6 +123,50 @@
       });
     }
     return records;
+  }
+
+  // Marriage register → one "marriage" record per couple. The husband is treated
+  // as the search's main person, the wife as the spouse (see fill-engine.js).
+  function parseMarriageLines(lines, delim) {
+    const records = [];
+    for (const line of lines) {
+      const c = splitLine(line, delim);
+      // Skip the header row (col 0 is "Husband Surname").
+      if (/husband/i.test(c[0] || "")) continue;
+
+      const husbandSurname = c[0] || "";
+      const husbandGiven = c[1] || "";
+      const wifeSurname = c[2] || "";
+      const wifeGiven = c[3] || "";
+      if (!husbandSurname && !husbandGiven && !wifeSurname && !wifeGiven) continue;
+
+      const dateText = c[4] || "";
+      records.push({
+        type: "marriage",
+        husbandGiven,
+        husbandSurname,
+        wifeGiven,
+        wifeSurname,
+        dateText,
+        year: yearOf(dateText),
+      });
+    }
+    return records;
+  }
+
+  function parseCsv(text) {
+    const normalized = String(text || "").split(NBSP).join(" ");
+    const delim = detectDelimiter(normalized);
+    const lines = normalized
+      .split(LINE_BREAK)
+      .map((l) => l.trim())
+      .filter(Boolean);
+    if (!lines.length) return [];
+
+    const header = splitLine(lines[0], delim);
+    return looksLikeMarriage(header)
+      ? parseMarriageLines(lines, delim)
+      : parseBaptismLines(lines, delim);
   }
 
   FF.parseCsv = parseCsv;

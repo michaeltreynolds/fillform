@@ -17,8 +17,15 @@
       previewEl.innerHTML = "";
       return;
     }
-    statusEl.textContent = `${records.length} records loaded · current: ${index + 1}.`;
+    const kind = records[0] && records[0].type === "marriage" ? "marriages" : "records";
+    statusEl.textContent = `${records.length} ${kind} loaded · current: ${index + 1}.`;
     const r = records[Math.min(index, records.length - 1)];
+    if (r.type === "marriage") {
+      previewEl.innerHTML =
+        `<div class="pv-title">Current record</div>` +
+        `<div>${esc(r.husbandGiven)} ${esc(r.husbandSurname)} &amp; ${esc(r.wifeGiven)} ${esc(r.wifeSurname)} · m. ${esc(r.year || "?")}</div>`;
+      return;
+    }
     const parents = (r.parents || [])
       .map((p) => `${p.role} ${esc(p.given)} ${esc(p.surname)}`)
       .join(", ");

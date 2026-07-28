@@ -31,6 +31,10 @@
   const byTestId = (id) =>
     document.querySelector(`#find-form [data-testid="${id}"]`);
 
+  // Same helpers scoped to the public tree-search page's form (marriage flow).
+  const sByName = (name) =>
+    document.querySelector(`#search-form-tree input[name="${CSS.escape(name)}"]`);
+
   function fillTextField(el, value, label) {
     if (!el) return console.warn("[FF] missing text field:", label);
     el.focus();
@@ -268,7 +272,76 @@
     return { ok: true, dateOk, placeOk };
   }
 
+  /**
+   * On the public tree-search page (/search/tree/name), open the Marriage search
+   * fields and fill a couple: husband as the main person, wife as the spouse,
+   * Illogan as the (standardized) marriage place, and the year as plain text.
+   *
+   * Chris's instruction: the marriage YEAR is a plain text search seed — it does
+   * NOT need standardizing (unlike Birth/Christening dates). Only the PLACE is
+   * standardized. We fill and stop; Chris presses Enter/Search himself.
+   */
+  async function fillMarriage(rec) {
+    const form = document.querySelector("#search-form-tree");
+    if (!form) return { ok: false, error: "not on the FamilySearch tree-search page" };
+
+    // 1. Expand "More Options" if the form is still collapsed.
+    const moreBtn = form.querySelector('[data-testid="moreOptions-button"]');
+    if (moreBtn && /more options/i.test(moreBtn.textContent || "")) {
+      realClick(moreBtn);
+      await sleep(300);
+    }
+
+    // 2. Add the Marriage life event if its fields aren't on the form yet.
+    if (!sByName("q_marriageLikePlace.fieldValue")) {
+      const mBtn = form.querySelector('[data-testid="marriageLike-fieldGroupButton"]');
+      if (mBtn) realClick(mBtn);
+      try {
+        await waitFor(() => sByName("q_marriageLikePlace.fieldValue"));
+      } catch {
+        return { ok: false, error: "could not open the Marriage fields" };
+      }
+    }
+
+    // 3. Add a Spouse field if it isn't present yet.
+    if (!sByName("q_spouseGivenName")) {
+      const sBtn = form.querySelector('[data-testid="spouse-fieldGroupButton"]');
+      if (sBtn) realClick(sBtn);
+      try {
+        await waitFor(() => sByName("q_spouseGivenName"));
+      } catch {
+        return { ok: false, error: "could not open the Spouse fields" };
+      }
+    }
+
+    // 4. Husband → main person's name; 5. Wife → spouse's name. (Query by input
+    //    name, which is stable whether the simple or expanded form is showing.)
+    fillTextField(sByName("q_givenName"), rec.husbandGiven, "husband given");
+    fillTextField(sByName("q_surname"), rec.husbandSurname, "husband surname");
+    fillTextField(sByName("q_spouseGivenName"), rec.wifeGiven, "wife given");
+    fillTextField(sByName("q_spouseSurname"), rec.wifeSurname, "wife surname");
+
+    // 6. Marriage year — plain text, NOT standardized. A single year in both
+    //    From and To pins the search to that year.
+    if (rec.year) {
+      fillTextField(sByName("q_marriageLikeDate_from"), rec.year, "marriage year from");
+      fillTextField(sByName("q_marriageLikeDate_to"), rec.year, "marriage year to");
+    }
+
+    // 7. Marriage place — standardized combo → Illogan, Cornwall.
+    const placeOk = await fillComboEl(
+      sByName("q_marriageLikePlace.fieldValue"),
+      ILLOGAN,
+      { attempts: 2, matcher: (t) => /^illogan, cornwall/i.test(t) },
+      "marriagePlace"
+    );
+
+    // No submit — leave the form for Chris to review and press Enter/Search.
+    return { ok: true, placeOk };
+  }
+
   FF.fillPerson = fillPerson;
   FF.fillParent = fillParent;
   FF.fillChristening = fillChristening;
+  FF.fillMarriage = fillMarriage;
 })();

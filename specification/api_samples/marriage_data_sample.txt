@@ -1,0 +1,8 @@
+Husband Surname	Husband Given Name	Wife Surname	Wife Given Name	Marriage Date	Husband Career	Wife Career
+Richards	Michael	Lecher	Grace	1756-02-07	Tinner	Spinster
+Davy	Thomas	Andrew	Anne	1756-02-07	Husbandman	Spinster
+Eudey	Richard	Wilkins	Zenobia	1756-02-24	Tinner	Spinster
+Michell	Joseph	Angove	Catherine	1756-02-27	Tinner	Spinster
+Eudey	Alexander	Webster	Jane	1756-04-17	Tinner	Spinster
+Rice	George	Hill	Elizabeth	1756-11-27	Husbandman	Spinster
+Rogers	David	Hocking	Ann	1756-12-24		

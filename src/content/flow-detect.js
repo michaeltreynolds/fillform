@@ -54,12 +54,23 @@
     return { flow: "vitals", personName, christeningExists, canAddChristening };
   }
 
+  // The public tree-search page (/search/tree/name) — a different form from the
+  // Add-Person "#find-form": here the form id is "#search-form-tree". This is
+  // where Chris fills a marriage: husband + wife + Illogan + year, then searches.
+  function detectSearch() {
+    if (!document.querySelector("#search-form-tree")) return { flow: null };
+    return { flow: "search" };
+  }
+
   // Combined entry point: find-form flows take precedence (an Add-Parent dialog
-  // can float over a Vitals page); fall back to Vitals detection.
+  // can float over a Vitals page); then a person's Vitals page; then the public
+  // tree-search page (marriage flow).
   function detect() {
     const f = detectFlow();
     if (f.flow) return f;
-    return detectVitals();
+    const v = detectVitals();
+    if (v.flow) return v;
+    return detectSearch();
   }
 
   FF.detectFlow = detect;
