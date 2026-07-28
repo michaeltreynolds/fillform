@@ -37,6 +37,7 @@
     const w = [];
     if (r.dateOk === false) w.push("date not standardized");
     if (r.placeOk === false) w.push("place not standardized");
+    if (r.spouseOk === false) w.push("mother's name not added");
     return w.length ? "⚠ " + w.join(", ") + " — fix manually" : "✓";
   }
 
@@ -116,6 +117,11 @@
           html += `<button class="ff-btn${isRec ? " ff-primary" : ""}" data-parent="${esc(p.role)}">Fill ${cap(p.role)}: ${esc(p.given)} ${esc(p.surname)}${isRec ? " ◀ likely" : ""}</button>`;
         }
         html += `</div>`;
+        const mother = (rec.parents || []).find((p) => p.role === "mother");
+        html += `<div class="ff-sub">Fills name, approx. birth year, and birthplace Cornwall, England. ` +
+          `Fill Father also adds the Wife` +
+          (mother && mother.given ? ` (${esc(mother.given)})` : "") +
+          ` as the mother. It does not search — review, then press Enter yourself.</div>`;
       } else {
         html += `<div class="ff-empty">No parents in data for this record.</div>`;
       }
@@ -165,7 +171,7 @@
         const role = b.getAttribute("data-parent");
         const p = rec.parents.find((x) => x.role === role);
         status("Filling " + role + "…");
-        const r = await FF.fillParent(p, rec.birthYear);
+        const r = await FF.fillParent(p, rec);
         status(r.ok ? "Filled " + role + ". " + warnFlags(r) : "Error: " + r.error);
       };
     });

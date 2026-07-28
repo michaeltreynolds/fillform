@@ -218,6 +218,14 @@
   const DATE_PICK = (o) => !!o && !!o.querySelector("svg");
   const ILLOGAN = "Illogan, Cornwall, England, United Kingdom";
 
+  // A parent's birthplace: the historical "Cornwall, England" jurisdiction —
+  // deliberately NOT the "Cornwall, England, United Kingdom" option. FamilySearch
+  // lists both; Chris wants the one WITHOUT the "United Kingdom" tail. The matcher
+  // takes an option starting "Cornwall, England" that doesn't mention the UK.
+  const CORNWALL = "Cornwall, England";
+  const CORNWALL_MATCH = (t) =>
+    /^cornwall,\s*england\b/i.test(t) && !/united kingdom/i.test(t);
+
   async function fillPerson(rec) {
     if (!document.querySelector("#find-form")) return { ok: false, error: "no form on page" };
     fillTextField(byTestId("first-name"), rec.given, "first-name");
@@ -235,12 +243,60 @@
     return { ok: true, dateOk, placeOk };
   }
 
-  async function fillParent(parent, childYear) {
+  /**
+   * Click the "Wife" chip under the find-form's "Additional Find Options" and
+   * fill the given-name field it reveals. The chip mounts a fresh relative-name
+   * field; we detect it by diffing the form's text inputs before/after the click,
+   * so we don't depend on an exact (undocumented) selector for that sub-field.
+   * Used when filling the FATHER: seeding his wife (the child's mother) tightens
+   * the search to the right man.
+   */
+  async function addWifeGivenName(given) {
+    const form = document.querySelector("#find-form");
+    if (!form) return false;
+    const chip = form.querySelector('[data-testid="add-wife"]');
+    if (!chip) { console.warn("[FF] Wife chip not found"); return false; }
+
+    const before = new Set(form.querySelectorAll('input[type="text"]'));
+    chip.scrollIntoView({ block: "center" });
+    realClick(chip);
+
+    // Re-resolve LIVE each time: pick the newly-mounted, visible given-name input
+    // (prefer one whose testid/name looks like a first/given field, else the
+    // first fresh input).
+    const freshGiven = () => {
+      const fresh = [...form.querySelectorAll('input[type="text"]')].filter(
+        (el) => !before.has(el) && el.offsetParent !== null
+      );
+      return (
+        fresh.find(
+          (el) =>
+            /first|given/i.test(el.getAttribute("data-testid") || "") ||
+            /firstName|givenName|given/i.test(el.getAttribute("name") || "")
+        ) ||
+        fresh[0] ||
+        null
+      );
+    };
+
+    try {
+      await waitFor(freshGiven);
+    } catch {
+      console.warn("[FF] Wife given-name field never appeared");
+      return false;
+    }
+    return fillTextVerified(freshGiven, given, "wife given name");
+  }
+
+  async function fillParent(parent, rec) {
     if (!document.querySelector("#find-form")) return { ok: false, error: "no form on page" };
     fillTextField(byTestId("first-name"), parent.given, "first-name");
     fillTextField(byTestId("last-name"), parent.surname, "last-name");
     if (parent.sex) selectRadio("sex", parent.sex);
     selectRadio("status", "deceased");
+
+    // Accept either the whole record (current caller) or a bare child year.
+    const childYear = rec && typeof rec === "object" ? rec.birthYear : rec;
 
     let dateOk = true;
     const y = parseInt(childYear, 10);
@@ -255,8 +311,23 @@
         pick: DATE_PICK,
       });
     }
-    // Parent birthplace is intentionally left blank (unknown).
-    return { ok: true, dateOk };
+
+    // Birthplace: the historical "Cornwall, England" (NOT "…, United Kingdom").
+    // Narrows the parent search to Cornwall without committing to a parish.
+    const placeOk = await fillCombo("birthPlace", CORNWALL, {
+      attempts: 2,
+      matcher: CORNWALL_MATCH,
+    });
+
+    // For the FATHER, also seed his wife — the child's mother — via the Wife chip,
+    // GIVEN name only. Done last, after the place combo's re-render settles.
+    let spouseOk = true;
+    if (parent.role === "father" && rec && typeof rec === "object" && rec.parents) {
+      const mother = rec.parents.find((p) => p.role === "mother");
+      if (mother && mother.given) spouseOk = await addWifeGivenName(mother.given);
+    }
+
+    return { ok: true, dateOk, placeOk, spouseOk };
   }
 
   /**

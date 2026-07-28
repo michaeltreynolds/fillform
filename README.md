@@ -22,7 +22,10 @@ you click its button. It never submits, matches, or creates anything on its own.
    review and click **Save** yourself.
 5. Also use **Add Parent**. The panel detects the parent flow and offers **Fill
    Father** / **Fill Mother** buttons derived from the same record (shared
-   surname, birth ≈ child − 20 years as `about YYYY`).
+   surname, birth ≈ child − 20 years as `about YYYY`, and birthplace **Cornwall,
+   England** — the historical jurisdiction, not the *…, United Kingdom* one).
+   **Fill Father** additionally clicks the **Wife** chip and enters the mother's
+   given name, so the search matches the right man.
 6. Click **Next ▶** in the panel to advance to the next record.
 
 The tricky part — committing FamilySearch's *standardized* Date/Place objects
