@@ -2,15 +2,15 @@ name: Claude
 
 # Lets an allowed person just open a GitHub issue and have Claude read it,
 # ask questions if needed, make the change, commit it straight to main, and
-# tell them how to test it.
+# tell them how to test it. A follow-up comment that mentions @claude keeps
+# the conversation going.
 #
 # SECURITY — this repo is PUBLIC, so anyone on GitHub can open an issue.
 # Claude only runs for the usernames in the allow-list below. Everyone else
 # is silently ignored (their issue just sits there; no run, no cost).
 #
 #   >>> TO LET SOMEONE NEW TRIGGER CLAUDE (e.g. Chris once he has a GitHub
-#   >>> account): add their exact GitHub username to BOTH allow-lists below,
-#   >>> the one in `triage-issue` and the one in `respond-to-mention`.
+#   >>> account): add their exact GitHub username to the ALLOW-LIST below.
 #   >>> e.g.  '["michaeltreynolds"]'  ->  '["michaeltreynolds","chris-username"]'
 #
 # One-time setup (see repo Settings):
@@ -33,12 +33,13 @@ permissions:
   id-token: write        # required by the action
 
 jobs:
-  # A brand-new issue from an allowed user: triage it, ask questions or make
-  # the change. No @claude mention needed.
-  triage-issue:
+  claude:
+    # Run when an allow-listed user either opens an issue OR mentions @claude in
+    # a comment. `comment.user.login` is empty on the `issues` event, so the
+    # `||` falls back to the issue opener; on comment events it is the commenter.
     if: >
-      github.event_name == 'issues' &&
-      contains(fromJSON('["michaeltreynolds"]'), github.event.issue.user.login)
+      contains(fromJSON('["michaeltreynolds"]'), github.event.comment.user.login || github.event.issue.user.login) &&
+      (github.event_name == 'issues' || contains(github.event.comment.body, '@claude'))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -46,47 +47,17 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           prompt: |
-            A new issue was opened in this repository. You are helping a
-            non-technical collaborator who just wants to describe a bug or a
-            desired feature in plain language.
+            You are helping a non-technical collaborator who describes a bug or a
+            desired feature in plain language, either by opening an issue or by
+            commenting on one. Below is the relevant context (some fields may be
+            empty depending on whether this was a new issue or a follow-up comment).
 
             Issue #${{ github.event.issue.number }}
             Title: ${{ github.event.issue.title }}
             Body:
             ${{ github.event.issue.body }}
 
-            Do the following:
-            1. Read the relevant parts of the codebase to understand the request.
-            2. If anything important is unclear or you need a decision, post a
-               short comment on the issue asking specific, plain-language
-               questions, and stop. Do not guess at ambiguous requirements.
-               End such a comment by telling the reporter to reply and start
-               their message with "@claude" so you'll see the answer.
-            3. If the request is clear enough, implement and commit/push to main!
-            4. Finish by commenting on the issue with a plain-language summary of
-               what you changed and clear, step-by-step instructions for how the
-               reporter can test it. Avoid jargon.
-
-  # A follow-up comment from an allowed user that mentions @claude: continue.
-  respond-to-mention:
-    if: >
-      (
-        (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
-        (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude'))
-      ) &&
-      contains(fromJSON('["michaeltreynolds"]'), github.event.comment.user.login)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: anthropics/claude-code-action@v1
-        with:
-          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          prompt: |
-            A collaborator has mentioned @claude in a comment on an issue or PR.
-            You are helping a non-technical collaborator who just wants to describe
-            a bug or a desired feature in plain language.
-
-            Comment:
+            Latest comment (if this was triggered by a comment):
             ${{ github.event.comment.body }}
 
             Do the following:
