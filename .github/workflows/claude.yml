@@ -52,8 +52,7 @@ jobs:
                questions, and stop. Do not guess at ambiguous requirements.
                End such a comment by telling the reporter to reply and start
                their message with "@claude" so you'll see the answer.
-            3. If the request is clear enough, implement it on a new branch and
-               open a pull request that closes this issue. Keep changes focused.
+            3. If the request is clear enough, implement and commit/push to main!
             4. Finish by commenting on the issue with a plain-language summary of
                what you changed and clear, step-by-step instructions for how the
                reporter can test it. Avoid jargon.
@@ -69,3 +68,22 @@ jobs:
       - uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            A collaborator has mentioned @claude in a comment on an issue or PR.
+            You are helping a non-technical collaborator who just wants to describe
+            a bug or a desired feature in plain language.
+
+            Comment:
+            ${{ github.event.comment.body }}
+
+            Do the following:
+            1. Read the relevant parts of the codebase to understand the request.
+            2. If anything important is unclear or you need a decision, post a
+               short comment on the issue asking specific, plain-language
+               questions, and stop. Do not guess at ambiguous requirements.
+               End such a comment by telling the reporter to reply and start
+               their message with "@claude" so you'll see the answer.
+            3. If the request is clear enough, implement and commit/push to main!
+            4. Finish by commenting on the issue with a plain-language summary of
+               what you changed and clear, step-by-step instructions for how the
+               reporter can test it. Avoid jargon.
