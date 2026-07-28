@@ -1,0 +1,71 @@
+name: Claude
+
+# Lets a collaborator (e.g. Chris) just open a GitHub issue and have Claude
+# read it, ask questions, open a PR with the fix/feature, and ask them to test.
+#
+# Setup required once (see README / repo settings):
+#   1. Run `claude setup-token` locally and copy the token it prints.
+#   2. Add it as a repo secret named CLAUDE_CODE_OAUTH_TOKEN.
+#   3. Install the Claude GitHub App on this repo.
+#   4. Add the person who will file issues as a collaborator (write access).
+
+on:
+  issues:
+    types: [opened]
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+
+# The action verifies the triggering user has write access before doing anything,
+# so only collaborators can start a run.
+permissions:
+  contents: write        # create branches / commit
+  pull-requests: write   # open PRs
+  issues: write          # comment on issues
+  id-token: write        # required by the action
+
+jobs:
+  # A brand-new issue: triage it, ask questions or open a PR. No @claude needed.
+  triage-issue:
+    if: github.event_name == 'issues'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            A new issue was opened in this repository. You are helping a
+            non-technical collaborator who just wants to describe a bug or a
+            desired feature in plain language.
+
+            Issue #${{ github.event.issue.number }}
+            Title: ${{ github.event.issue.title }}
+            Body:
+            ${{ github.event.issue.body }}
+
+            Do the following:
+            1. Read the relevant parts of the codebase to understand the request.
+            2. If anything important is unclear or you need a decision, post a
+               short comment on the issue asking specific, plain-language
+               questions, and stop. Do not guess at ambiguous requirements.
+               End such a comment by telling the reporter to reply and start
+               their message with "@claude" so you'll see the answer.
+            3. If the request is clear enough, implement it on a new branch and
+               open a pull request that closes this issue. Keep changes focused.
+            4. Finish by commenting on the issue with a plain-language summary of
+               what you changed and clear, step-by-step instructions for how the
+               reporter can test it. Avoid jargon.
+
+  # A follow-up comment that mentions @claude: continue the conversation / work.
+  respond-to-mention:
+    if: |
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
