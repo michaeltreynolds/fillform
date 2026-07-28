@@ -32,14 +32,39 @@
     document.querySelector(`#find-form [data-testid="${id}"]`);
 
   // Same helpers scoped to the public tree-search page's form (marriage flow).
-  const sByName = (name) =>
-    document.querySelector(`#search-form-tree input[name="${CSS.escape(name)}"]`);
+  // During the More-Options / add-Marriage / add-Spouse transitions the same
+  // input name can briefly exist twice (the simple field being torn down while
+  // the expanded one mounts) — prefer the visible one.
+  const sByName = (name) => {
+    const all = [...document.querySelectorAll(`#search-form-tree input[name="${CSS.escape(name)}"]`)];
+    return all.find((el) => el.offsetParent !== null) || all[0] || null;
+  };
 
   function fillTextField(el, value, label) {
     if (!el) return console.warn("[FF] missing text field:", label);
     el.focus();
     setNativeValue(el, value);
     el.dispatchEvent(new Event("blur", { bubbles: true }));
+  }
+
+  // Fill a text field and confirm the value stuck. The search form re-renders as
+  // fields are added, which can wipe a value or hand back a stale node — so we
+  // re-resolve the element fresh each attempt (via the getEl thunk) and re-fill
+  // until it holds.
+  async function fillTextVerified(getEl, value, label, attempts = 6) {
+    for (let i = 0; i < attempts; i++) {
+      const el = getEl();
+      if (el) {
+        fillTextField(el, value, label);
+        await sleep(120);
+        const cur = getEl();
+        if (cur && cur.value === value) return true;
+      } else {
+        await sleep(150);
+      }
+    }
+    console.warn("[FF] text field didn't stick:", label);
+    return false;
   }
 
   function selectRadio(name, value) {
@@ -314,27 +339,30 @@
       }
     }
 
-    // 4. Husband → main person's name; 5. Wife → spouse's name. (Query by input
-    //    name, which is stable whether the simple or expanded form is showing.)
-    fillTextField(sByName("q_givenName"), rec.husbandGiven, "husband given");
-    fillTextField(sByName("q_surname"), rec.husbandSurname, "husband surname");
-    fillTextField(sByName("q_spouseGivenName"), rec.wifeGiven, "wife given");
-    fillTextField(sByName("q_spouseSurname"), rec.wifeSurname, "wife surname");
-
-    // 6. Marriage year — plain text, NOT standardized. A single year in both
-    //    From and To pins the search to that year.
-    if (rec.year) {
-      fillTextField(sByName("q_marriageLikeDate_from"), rec.year, "marriage year from");
-      fillTextField(sByName("q_marriageLikeDate_to"), rec.year, "marriage year to");
-    }
-
-    // 7. Marriage place — standardized combo → Illogan, Cornwall.
+    // 4. Marriage place — standardized combo → Illogan, Cornwall. Done before the
+    //    names because committing the combo re-renders this part of the form.
     const placeOk = await fillComboEl(
       sByName("q_marriageLikePlace.fieldValue"),
       ILLOGAN,
       { attempts: 2, matcher: (t) => /^illogan, cornwall/i.test(t) },
       "marriagePlace"
     );
+
+    // 5. Marriage year — plain text, NOT standardized. A single year in both
+    //    From and To pins the search to that year.
+    if (rec.year) {
+      await fillTextVerified(() => sByName("q_marriageLikeDate_from"), rec.year, "marriage year from");
+      await fillTextVerified(() => sByName("q_marriageLikeDate_to"), rec.year, "marriage year to");
+    }
+
+    // 6. Husband → main person's name; 7. Wife → spouse's name. Filled LAST, once
+    //    every structural re-render has settled, and verified so a late re-render
+    //    can't leave them blank. (Query by input name — stable across the simple/
+    //    expanded transition.)
+    await fillTextVerified(() => sByName("q_givenName"), rec.husbandGiven, "husband given");
+    await fillTextVerified(() => sByName("q_surname"), rec.husbandSurname, "husband surname");
+    await fillTextVerified(() => sByName("q_spouseGivenName"), rec.wifeGiven, "wife given");
+    await fillTextVerified(() => sByName("q_spouseSurname"), rec.wifeSurname, "wife surname");
 
     // No submit — leave the form for Chris to review and press Enter/Search.
     return { ok: true, placeOk };
