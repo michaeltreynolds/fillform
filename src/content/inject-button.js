@@ -33,6 +33,78 @@
     if (el) el.textContent = msg || "";
   }
 
+  // ---- Developer: copy this screen's HTML ----------------------------------
+  // Picks the smallest container that captures the surface a developer needs to
+  // add support for it: an open dialog (where Add-event forms mount), else a
+  // known form, else the whole page.
+  function captureTarget() {
+    const dialog = [...document.querySelectorAll('[role="dialog"]')].find(
+      (d) => d.offsetParent !== null
+    );
+    if (dialog) return { el: dialog, what: "open dialog" };
+    const form = document.querySelector("#find-form, #search-form-tree");
+    if (form) return { el: form, what: "#" + form.id };
+    return { el: document.body, what: "page" };
+  }
+
+  async function copyText(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      /* fall through to the execCommand path (older focus/permission cases) */
+    }
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.cssText = "position:fixed;top:0;left:0;opacity:0";
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand("copy");
+      ta.remove();
+      return ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async function copyPageHtml() {
+    const { el, what } = captureTarget();
+    const html = el.outerHTML;
+    const kb = Math.max(1, Math.round(html.length / 1024));
+    const ok = await copyText(html);
+    if (ok) {
+      status(`Copied the ${what} HTML (${kb} KB). Paste it into the GitHub issue — glance over it for personal details first.`);
+    } else {
+      status("Couldn't copy automatically — the HTML was logged to the console (F12) instead.");
+      console.log("[FF] page HTML for issue:\n", html);
+    }
+  }
+
+  const copyBtnHtml = () =>
+    `<div class="ff-dev">` +
+    `<button class="ff-btn ff-copy" data-copyhtml="1">Copy page HTML</button>` +
+    `<div class="ff-sub">For a new screen the extension doesn't handle yet: copy this page's HTML to attach to a feature request. Review it before pasting into a public issue.</div>` +
+    `</div>`;
+
+  function wireCopy(panel) {
+    const b = panel.querySelector("[data-copyhtml]");
+    if (b) b.onclick = copyPageHtml;
+  }
+
+  // Minimal panel shown in developer mode on a page with no fillable form, so the
+  // Copy-HTML button is reachable exactly when capturing an unsupported screen.
+  function renderDebugOnly() {
+    const panel = ensurePanel();
+    panel.style.display = "block";
+    panel.innerHTML =
+      `<div class="ff-head">FillForm <span class="ff-ver">v${VERSION}</span></div>` +
+      `<div class="ff-sub">Developer mode. No fillable form detected on this page.</div>` +
+      copyBtnHtml() +
+      `<div class="ff-status" id="ff-status"></div>`;
+    wireCopy(panel);
+  }
+
   function warnFlags(r) {
     const w = [];
     if (r.dateOk === false) w.push("date not standardized");
@@ -50,7 +122,9 @@
     if (!records.length) {
       panel.innerHTML =
         `<div class="ff-head">FillForm <span class="ff-ver">v${VERSION}</span></div>` +
-        `<div class="ff-empty">No data loaded. Click the FillForm toolbar icon to paste CSV.</div>`;
+        `<div class="ff-empty">No data loaded. Click the FillForm toolbar icon to paste CSV.</div>` +
+        (state.debug ? copyBtnHtml() + `<div class="ff-status" id="ff-status"></div>` : "");
+      if (state.debug) wireCopy(panel);
       return;
     }
 
@@ -135,7 +209,10 @@
       `<div class="ff-nav">` +
       `<button class="ff-link" data-nav="prev" ${i === 0 ? "disabled" : ""}>◀ Prev</button>` +
       `<button class="ff-link" data-nav="next" ${i >= records.length - 1 ? "disabled" : ""}>Next ▶</button>` +
-      `</div><div class="ff-status" id="ff-status"></div>`;
+      `</div>`;
+
+    if (state.debug) html += copyBtnHtml();
+    html += `<div class="ff-status" id="ff-status"></div>`;
 
     panel.innerHTML = html;
     wire(panel, rec);
@@ -185,6 +262,8 @@
         await FF.storage.setIndex(i); // storage change → re-render
       };
     });
+
+    wireCopy(panel);
   }
 
   // Re-render only when something meaningful changed (avoids wiping the status
@@ -193,7 +272,15 @@
     const info = FF.detectFlow();
     const { flow, childName, spouseName, personName, christeningExists, canAddChristening } = info;
     // Panel is relevant on the find-form flows AND on a person's Vitals page.
+    // In developer mode it also appears on any other page so the Copy-HTML
+    // button can capture an unsupported screen.
     if (!flow) {
+      if (state.debug) {
+        if (!force && lastSig === "debug-only" && document.getElementById(PANEL_ID)) return;
+        lastSig = "debug-only";
+        renderDebugOnly();
+        return;
+      }
       const p = document.getElementById(PANEL_ID);
       if (p) p.style.display = "none";
       lastSig = "";
@@ -201,7 +288,7 @@
     }
     const sig = [
       flow, childName, spouseName, personName, christeningExists, canAddChristening,
-      state.index, state.records.length,
+      state.index, state.records.length, state.debug,
     ].join("|");
     if (!force && sig === lastSig && document.getElementById(PANEL_ID)) return;
     lastSig = sig;

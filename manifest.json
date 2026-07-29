@@ -3,7 +3,7 @@
   "name": "FillForm — FamilySearch data entry helper",
   "version": "0.9.1",
   "description": "Fills FamilySearch Add Person / Add Parent / Marriage-search forms from pasted CSV. You stay in control of every decision.",
-  "permissions": ["storage"],
+  "permissions": ["storage", "clipboardWrite"],
   "host_permissions": ["https://www.familysearch.org/*"],
   "action": {
     "default_popup": "src/popup/popup.html",

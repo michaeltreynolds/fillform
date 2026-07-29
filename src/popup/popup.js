@@ -11,7 +11,9 @@
     );
 
   async function showState() {
-    const { records, index } = await FF.storage.getState();
+    const { records, index, debug } = await FF.storage.getState();
+    const debugBox = document.getElementById("debug");
+    if (debugBox) debugBox.checked = debug;
     if (!records.length) {
       statusEl.textContent = "No data loaded.";
       previewEl.innerHTML = "";
@@ -50,6 +52,9 @@
     ta.value = "";
     showState();
   };
+
+  document.getElementById("debug").onchange = (e) =>
+    FF.storage.setDebug(e.target.checked);
 
   document.getElementById("version").textContent =
     "v" + chrome.runtime.getManifest().version;

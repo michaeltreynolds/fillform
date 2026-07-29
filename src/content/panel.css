@@ -100,3 +100,18 @@
   font-size: 12px;
   color: #333;
 }
+
+#ff-panel .ff-dev {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed #d5d9dd;
+}
+
+#ff-panel .ff-btn.ff-copy {
+  border-color: #b0b6bc;
+  background: #f4f6f8;
+  color: #333;
+  width: 100%;
+}
+
+#ff-panel .ff-btn.ff-copy:hover { background: #e9edf0; }
