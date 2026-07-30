@@ -44,8 +44,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: anthropics/claude-code-action@v1
+        env:
+          # Lets Claude use the `gh` CLI (git/PR/issue ops) from Bash, authenticated.
+          GH_TOKEN: ${{ github.token }}
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # By default the action blocks arbitrary Bash, so Claude can't run git or
+          # gh — which it needs to commit to main and comment on the issue. Triggers
+          # are already limited to the allow-list above, so granting Bash is safe.
+          claude_args: |
+            --allowedTools "Edit,Write,Read,Glob,Grep,Bash"
           prompt: |
             You are helping a non-technical collaborator who describes a bug or a
             desired feature in plain language, either by opening an issue or by
@@ -62,12 +70,17 @@ jobs:
 
             Do the following:
             1. Read the relevant parts of the codebase to understand the request.
-            2. If anything important is unclear or you need a decision, post a
-               short comment on the issue asking specific, plain-language
-               questions, and stop. Do not guess at ambiguous requirements.
-               End such a comment by telling the reporter to reply and start
-               their message with "@claude" so you'll see the answer.
-            3. If the request is clear enough, implement and commit/push to main!
+            2. If anything important is unclear or you need a decision, comment on
+               the issue asking specific, plain-language questions, then stop. Do
+               not guess at ambiguous requirements. End such a comment by telling
+               the reporter to reply and start their message with "@claude" so
+               you'll see the answer.
+            3. If the request is clear enough, make the change and commit it to the
+               main branch with git:
+                 git add -A
+                 git commit -m "<short summary of the change>"
+                 git push origin HEAD:main
             4. Finish by commenting on the issue with a plain-language summary of
-               what you changed and clear, step-by-step instructions for how the
-               reporter can test it. Avoid jargon.
+               what you changed and clear, step-by-step test instructions (avoid
+               jargon). Post it with the gh CLI, e.g.:
+                 gh issue comment ${{ github.event.issue.number }} --body "<your summary>"
