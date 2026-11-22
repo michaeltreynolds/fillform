@@ -216,7 +216,27 @@
 
   // The standardized date option carries a calendar icon; the raw echo does not.
   const DATE_PICK = (o) => !!o && !!o.querySelector("svg");
-  const ILLOGAN = "Illogan, Cornwall, England, United Kingdom";
+
+  // The record's place (from the spreadsheet's last column; Illogan by default)
+  // → what to type into a standardized place combo + how to recognize its option.
+  // A bare name ("Camborne") is typed as "Camborne, Cornwall, England, United
+  // Kingdom" and matched on an option starting "Camborne, Cornwall". A place the
+  // sheet already spells out with commas is typed as-is and matched on its first
+  // part. If nothing matches, fillComboEl falls back to the first suggestion.
+  const reEsc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  function placeSpec(rec) {
+    const raw = String((rec && rec.place) || FF.DEFAULT_PLACE || "Illogan").trim();
+    const name = raw.split(",")[0].trim();
+    if (raw.includes(",")) {
+      return { typed: raw, label: name, matcher: (t) => new RegExp("^" + reEsc(name) + "\\s*,", "i").test(t) };
+    }
+    return {
+      typed: `${raw}, Cornwall, England, United Kingdom`,
+      label: name,
+      matcher: (t) => new RegExp("^" + reEsc(name) + ",\\s*cornwall", "i").test(t),
+    };
+  }
+  FF.placeLabel = (rec) => placeSpec(rec).label;
 
   // A parent's birthplace: the historical "Cornwall, England" jurisdiction
   // (County, 1068-1801) — deliberately NOT "Cornwall, England, United Kingdom"
@@ -239,9 +259,10 @@
     let dateOk = true, placeOk = true;
     if (rec.birthYear)
       dateOk = await fillCombo("birthDate", rec.birthYear, { attempts: 3, pick: DATE_PICK });
-    placeOk = await fillCombo("birthPlace", ILLOGAN, {
+    const place = placeSpec(rec);
+    placeOk = await fillCombo("birthPlace", place.typed, {
       attempts: 2,
-      matcher: (t) => /^illogan, cornwall/i.test(t),
+      matcher: place.matcher,
     });
     return { ok: true, dateOk, placeOk };
   }
@@ -336,7 +357,7 @@
   /**
    * On a person's page (Vitals), open the Christening "Add" dialog and fill its
    * Date + Place with the record's FULL date (day/month/year, unlike Birth which
-   * is year-only) and Illogan — then STOP. We deliberately do NOT click Save:
+   * is year-only) and the record's place — then STOP. We deliberately do NOT click Save:
    * FillForm never commits; Chris reviews the populated dialog and saves himself.
    */
   async function fillChristening(rec) {
@@ -360,10 +381,11 @@
 
     const dateOk = await fillComboEl(dateEl, rec.dateText, { attempts: 3, pick: DATE_PICK }, "christeningDate");
     const placeEl = document.querySelector('.CHRISTENING input[data-testid="conclusionDetailOverlay:place"]');
+    const place = placeSpec(rec);
     const placeOk = await fillComboEl(
       placeEl,
-      ILLOGAN,
-      { attempts: 2, matcher: (t) => /^illogan, cornwall/i.test(t) },
+      place.typed,
+      { attempts: 2, matcher: place.matcher },
       "christeningPlace"
     );
 
@@ -374,7 +396,7 @@
   /**
    * On the public tree-search page (/search/tree/name), open the Marriage search
    * fields and fill a couple: husband as the main person, wife as the spouse,
-   * Illogan as the (standardized) marriage place, and the year as plain text.
+   * the record's place as the (standardized) marriage place, and the year as plain text.
    *
    * Chris's instruction: the marriage YEAR is a plain text search seed — it does
    * NOT need standardizing (unlike Birth/Christening dates). Only the PLACE is
@@ -413,12 +435,13 @@
       }
     }
 
-    // 4. Marriage place — standardized combo → Illogan, Cornwall. Done before the
+    // 4. Marriage place — standardized combo → the record's place. Done before the
     //    names because committing the combo re-renders this part of the form.
+    const place = placeSpec(rec);
     const placeOk = await fillComboEl(
       sByName("q_marriageLikePlace.fieldValue"),
-      ILLOGAN,
-      { attempts: 2, matcher: (t) => /^illogan, cornwall/i.test(t) },
+      place.typed,
+      { attempts: 2, matcher: place.matcher },
       "marriagePlace"
     );
 

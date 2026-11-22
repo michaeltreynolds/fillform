@@ -25,7 +25,7 @@
     if (r.type === "marriage") {
       previewEl.innerHTML =
         `<div class="pv-title">Current record</div>` +
-        `<div>${esc(r.husbandGiven)} ${esc(r.husbandSurname)} &amp; ${esc(r.wifeGiven)} ${esc(r.wifeSurname)} · m. ${esc(r.year || "?")}</div>`;
+        `<div>${esc(r.husbandGiven)} ${esc(r.husbandSurname)} &amp; ${esc(r.wifeGiven)} ${esc(r.wifeSurname)} · m. ${esc(r.year || "?")} · ${esc(r.place || "Illogan")}</div>`;
       return;
     }
     const parents = (r.parents || [])
@@ -33,7 +33,7 @@
       .join(", ");
     previewEl.innerHTML =
       `<div class="pv-title">Current record</div>` +
-      `<div>${esc(r.given)} ${esc(r.surname)} · ${esc(r.sex || "?")} · b. ${esc(r.birthYear || "?")}</div>` +
+      `<div>${esc(r.given)} ${esc(r.surname)} · ${esc(r.sex || "?")} · b. ${esc(r.birthYear || "?")} · ${esc(r.place || "Illogan")}</div>` +
       (parents ? `<div class="pv-parents">Parents: ${parents}</div>` : `<div class="pv-parents">No parents listed.</div>`);
   }
 

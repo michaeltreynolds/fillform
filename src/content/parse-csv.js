@@ -2,10 +2,14 @@
  * header row so Chris can paste either without picking a mode:
  *
  *  Baptisms  (type: "person")  — the default format:
- *    0 Surname | 1 Given Name | 2 Relation (s./d.) | 3 "of" | 4 Parent A | 5 Parent B | 6 Date
+ *    0 Surname | 1 Given Name | 2 Relation (s./d.) | 3 "of" | 4 Parent A | 5 Parent B | 6 Date | [Place]
  *
  *  Marriages (type: "marriage") — header contains "Husband" and "Wife":
- *    0 Husband Surname | 1 Husband Given | 2 Wife Surname | 3 Wife Given | 4 Marriage Date | 5 Husband Career | 6 Wife Career
+ *    0 Husband Surname | 1 Husband Given | 2 Wife Surname | 3 Wife Given | 4 Marriage Date | 5 Husband Career | 6 Wife Career | [Place]
+ *
+ * Place: when the sheet has more than the 7 standard columns, the LAST column is
+ * the record's place (e.g. Illogan, Tuckingmill, Camborne). A blank place cell,
+ * or a sheet without the extra column, falls back to DEFAULT_PLACE (Illogan).
  *
  * Tolerant of messy pastes (Google Docs/Sheets): comma OR tab delimited, any
  * line-ending, blank lines, and non-breaking spaces.
@@ -59,6 +63,24 @@
 
   const hasSurname = (s) => /\s/.test((s || "").trim());
 
+  // Both formats have 7 standard columns; anything after that, the LAST column
+  // is the place.
+  const STANDARD_COLS = 7;
+  const DEFAULT_PLACE = "Illogan";
+
+  // Index of the place column, from the first line (header or first data row):
+  // its last column if it has more than the standard 7, else -1 (no place column).
+  const placeIndexOf = (firstCells) =>
+    firstCells.length > STANDARD_COLS ? firstCells.length - 1 : -1;
+
+  // The row's place. Rows pasted from a sheet can be ragged (trailing blanks
+  // trimmed), so fall back to the row's own last cell past the standard columns.
+  function placeOf(c, placeIdx) {
+    let v = placeIdx >= 0 ? c[placeIdx] || "" : "";
+    if (!v && c.length > STANDARD_COLS) v = c[c.length - 1] || "";
+    return v.trim() || DEFAULT_PLACE;
+  }
+
   /**
    * Decide which parent name is the father vs the mother (see plan.md):
    *   1. An entry containing a surname (a space) -> Father, with his explicit
@@ -100,7 +122,7 @@
     headerCells.some((h) => /husband/i.test(h)) && headerCells.some((h) => /wife/i.test(h));
 
   // Baptism register → one "person" record per child (with derived parents).
-  function parseBaptismLines(lines, delim) {
+  function parseBaptismLines(lines, delim, placeIdx) {
     const records = [];
     for (const line of lines) {
       const c = splitLine(line, delim);
@@ -120,6 +142,7 @@
         dateText,
         birthYear: yearOf(dateText),
         parents: deriveParents(surname, c[4] || "", c[5] || ""),
+        place: placeOf(c, placeIdx),
       });
     }
     return records;
@@ -127,7 +150,7 @@
 
   // Marriage register → one "marriage" record per couple. The husband is treated
   // as the search's main person, the wife as the spouse (see fill-engine.js).
-  function parseMarriageLines(lines, delim) {
+  function parseMarriageLines(lines, delim, placeIdx) {
     const records = [];
     for (const line of lines) {
       const c = splitLine(line, delim);
@@ -149,6 +172,7 @@
         wifeSurname,
         dateText,
         year: yearOf(dateText),
+        place: placeOf(c, placeIdx),
       });
     }
     return records;
@@ -164,16 +188,18 @@
     if (!lines.length) return [];
 
     const header = splitLine(lines[0], delim);
+    const placeIdx = placeIndexOf(header);
     return looksLikeMarriage(header)
-      ? parseMarriageLines(lines, delim)
-      : parseBaptismLines(lines, delim);
+      ? parseMarriageLines(lines, delim, placeIdx)
+      : parseBaptismLines(lines, delim, placeIdx);
   }
 
   FF.parseCsv = parseCsv;
   FF.deriveParents = deriveParents;
+  FF.DEFAULT_PLACE = DEFAULT_PLACE;
 
   // Allow Node tooling/tests to import the pure functions.
   if (typeof module !== "undefined" && module.exports) {
-    module.exports = { parseCsv, deriveParents };
+    module.exports = { parseCsv, deriveParents, DEFAULT_PLACE };
   }
 })();

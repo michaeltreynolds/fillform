@@ -131,9 +131,10 @@
     const i = Math.min(index, records.length - 1);
     const rec = records[i];
     const isMarriage = rec.type === "marriage";
+    const placeName = FF.placeLabel(rec);
     const recLine = isMarriage
-      ? `${esc(rec.husbandGiven)} ${esc(rec.husbandSurname)} &amp; ${esc(rec.wifeGiven)} ${esc(rec.wifeSurname)} · m. ${esc(rec.year || "?")}`
-      : `${esc(rec.given)} ${esc(rec.surname)} · ${esc(rec.sex || "?")} · b. ${esc(rec.birthYear || "?")}`;
+      ? `${esc(rec.husbandGiven)} ${esc(rec.husbandSurname)} &amp; ${esc(rec.wifeGiven)} ${esc(rec.wifeSurname)} · m. ${esc(rec.year || "?")} · ${esc(placeName)}`
+      : `${esc(rec.given)} ${esc(rec.surname)} · ${esc(rec.sex || "?")} · b. ${esc(rec.birthYear || "?")} · ${esc(placeName)}`;
     let html =
       `<div class="ff-head">FillForm <span class="ff-ver">v${VERSION}</span> — record ${i + 1} / ${records.length}</div>` +
       `<div class="ff-rec">${recLine}</div>`;
@@ -142,7 +143,7 @@
       if (isMarriage) {
         html += `<div class="ff-btns"><button class="ff-btn ff-primary" data-marriage="1">` +
           `Fill marriage: ${esc(rec.husbandGiven)} &amp; ${esc(rec.wifeGiven)}</button></div>`;
-        html += `<div class="ff-sub">Opens the Marriage + Spouse fields and fills the couple, Illogan, and ${esc(rec.year || "the year")}. ` +
+        html += `<div class="ff-sub">Opens the Marriage + Spouse fields and fills the couple, ${esc(placeName)}, and ${esc(rec.year || "the year")}. ` +
           `It does not search — review, then press Enter yourself.</div>`;
       } else {
         html += `<div class="ff-empty">This is the marriage-search page, but the loaded records are baptisms. Load a marriage CSV to fill it.</div>`;
@@ -161,7 +162,7 @@
         html += `<div class="ff-empty">This record has no date to add as a christening.</div>`;
       } else {
         html += `<div class="ff-btns"><button class="ff-btn ff-primary" data-christening="1">` +
-          `Add christening: ${esc(rec.dateText)} at Illogan</button></div>`;
+          `Add christening: ${esc(rec.dateText)} at ${esc(placeName)}</button></div>`;
         html += `<div class="ff-sub">Opens the Christening dialog and fills the date + place. It does not save — review, then click Save yourself.</div>`;
       }
     } else if (flow === "parent") {

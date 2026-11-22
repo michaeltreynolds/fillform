@@ -15,7 +15,7 @@
  *
  * The "vitals" flow is a person's detail page (no find-form). After Chris creates
  * a person, he lands here; the panel offers a button that opens the Christening
- * "Add" dialog and fills its full date + Illogan (without saving).
+ * "Add" dialog and fills its full date + the record's place (without saving).
  */
 (function () {
   const FF = (window.FF = window.FF || {});
@@ -56,7 +56,7 @@
 
   // The public tree-search page (/search/tree/name) — a different form from the
   // Add-Person "#find-form": here the form id is "#search-form-tree". This is
-  // where Chris fills a marriage: husband + wife + Illogan + year, then searches.
+  // where Chris fills a marriage: husband + wife + place + year, then searches.
   function detectSearch() {
     if (!document.querySelector("#search-form-tree")) return { flow: null };
     return { flow: "search" };

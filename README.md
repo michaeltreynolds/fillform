@@ -8,17 +8,21 @@ you click its button. It never submits, matches, or creates anything on its own.
 
 ## How it works
 
-1. Click the FillForm toolbar icon and **paste your CSV** (an Illogan baptism
-   register: `Surname, Given Name, Relation, of, Parent A, Parent B, Date`).
+1. Click the FillForm toolbar icon and **paste your CSV** (a baptism
+   register: `Surname, Given Name, Relation, of, Parent A, Parent B, Date, Place`).
+   The **last column is the place** (Illogan, Tuckingmill, Camborne, …) and is
+   used for every place the extension fills. If it's blank, or the sheet has
+   only the original 7 columns, the place defaults to **Illogan**. Marriage
+   sheets work the same way: put the place after *Wife Career*.
 2. On FamilySearch, open **Add Unconnected Person**. A small FillForm panel
    appears (top-right) showing the current record with a **Fill** button.
 3. Click **Fill** — it populates First/Last name, Sex, Status (Deceased), the
-   standardized **Birth Date** (year), and **Birthplace** (Illogan). Then you
+   standardized **Birth Date** (year), and **Birthplace** (the record's place). Then you
    search and decide: attach to a match, or create a new person.
 4. After creating, on the new person's page the panel offers **Add christening:
-   `<date>` at Illogan** (when there's no christening yet). Click it to open the
+   `<date>` at <place>** (when there's no christening yet). Click it to open the
    Christening dialog and fill the standardized **full date** (day/month/year,
-   from your data) and **Illogan** — it stops there and does **not** save, so you
+   from your data) and the record's **place** — it stops there and does **not** save, so you
    review and click **Save** yourself.
 5. Also use **Add Parent**. The panel detects the parent flow and offers **Fill
    Father** / **Fill Mother** buttons derived from the same record (shared
@@ -92,4 +96,4 @@ Produces `dist/fillform.zip` (and a staged `dist/fillform/` folder) with
 ## Scope
 
 Built for Chris Stevenson's Illogan, Cornwall genealogy work. The CSV schema,
-the always-`Illogan` birthplace, and the parent rules are specific to that data.
+the place column (default `Illogan`), and the parent rules are specific to that data.
